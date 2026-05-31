@@ -998,3 +998,231 @@ function drawGenericBuilding(c, block, detail){
         c.quadraticCurveTo(cx+(block.vertices[i].cp.x-cx)*sc, cy+(block.vertices[i].cp.y-cy)*sc,
                            cx+(block.vertices[ni].v.x-cx)*sc, cy+(block.vertices[ni].v.y-cy)*sc);
     }
+    c.closePath();
+    c.fillStyle=THEME.roofColors[ci]; c.fill();
+    c.restore();
+}
+
+// ── TREES ─────────────────────────────────────────────────────
+function drawTree(c, x, y, r, detail){
+    c.beginPath(); c.ellipse(x+r*.28,y+r*.35,r*.85,r*.48,0.25,0,Math.PI*2);
+    c.fillStyle='rgba(0,0,0,0.22)'; c.fill();
+    const h=seededRand(x*0.047+y*0.031);
+    const tc=h<0.25?THEME.treeA:h<0.5?THEME.treeB:h<0.75?THEME.treeC:THEME.treeD;
+    c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fillStyle=tc; c.fill();
+    c.beginPath(); c.arc(x-r*.38,y-r*.08,r*.70,0,Math.PI*2); c.fillStyle=THEME.treeB; c.fill();
+    c.beginPath(); c.arc(x+r*.38,y-r*.05,r*.62,0,Math.PI*2); c.fillStyle=tc; c.fill();
+    c.beginPath(); c.arc(x-r*.18,y-r*.22,r*.35,0,Math.PI*2); c.fillStyle='rgba(255,255,255,0.1)'; c.fill();
+}
+
+function drawScatteredTrees(c, view, detail){
+    for(const node of city.nodes){
+        if(!inView(node.x,node.y,700,view)) continue;
+        for(let i=0;i<6;i++){
+            const ang=(i/6)*Math.PI*2+seededRand(node.id*2.7+i)*0.8;
+            const rad=190+seededRand(node.id*1.3+i*2.1)*260;
+            const tx=node.x+Math.cos(ang)*rad, ty=node.y+Math.sin(ang)*rad;
+            const r=28+seededRand(node.id*0.7+i)*22;
+            if(inView(tx,ty,r*2,view)) drawTree(c,tx,ty,r,detail);
+        }
+    }
+    for(const e of city.edges){
+        if(!edgeInView(e,view)) continue;
+        for(let t=0.14;t<=0.88;t+=0.26){
+            const mt=1-t;
+            const px=mt*mt*e.n1.x+2*mt*t*e.cp.x+t*t*e.n2.x;
+            const py=mt*mt*e.n1.y+2*mt*t*e.cp.y+t*t*e.n2.y;
+            const dx=2*mt*(e.cp.x-e.n1.x)+2*t*(e.n2.x-e.cp.x);
+            const dy=2*mt*(e.cp.y-e.n1.y)+2*t*(e.n2.y-e.cp.y);
+            const len=Math.sqrt(dx*dx+dy*dy)||1;
+            const nx=-dy/len, ny=dx/len;
+            const side=Math.sin(e.id*3.7+t*11)>0?1:-1;
+            const off=105+seededRand(e.id*1.9+t*7)*55;
+            const r=26+seededRand(e.id*2.3+t*5)*18;
+            const tx2=px+nx*off*side, ty2=py+ny*off*side;
+            if(inView(tx2,ty2,r*2,view)) drawTree(c,tx2,ty2,r,detail);
+        }
+    }
+}
+
+// ── STREET FURNITURE ─────────────────────────────────────────
+function drawStreetFurniture(c, view, detail){
+    if(!detail || state.camera.zoom < 0.28) return;
+    for(const e of city.edges){
+        if(!edgeInView(e,view)) continue;
+        for(let t=0.2;t<=0.8;t+=0.3){
+            const mt=1-t;
+            const px=mt*mt*e.n1.x+2*mt*t*e.cp.x+t*t*e.n2.x;
+            const py=mt*mt*e.n1.y+2*mt*t*e.cp.y+t*t*e.n2.y;
+            const dx=2*mt*(e.cp.x-e.n1.x)+2*t*(e.n2.x-e.cp.x);
+            const dy=2*mt*(e.cp.y-e.n1.y)+2*t*(e.n2.y-e.cp.y);
+            const len=Math.sqrt(dx*dx+dy*dy)||1;
+            const nx=-dy/len, ny=dx/len;
+            for(const s of[1,-1]){
+                const lx=px+nx*85*s, ly=py+ny*85*s;
+                if(!inView(lx,ly,40,view)) continue;
+                c.strokeStyle='#888a90'; c.lineWidth=5;
+                c.beginPath(); c.moveTo(lx,ly); c.lineTo(lx,ly-65); c.stroke();
+                c.beginPath(); c.moveTo(lx,ly-65); c.lineTo(lx+12*s,ly-80); c.stroke();
+                c.beginPath(); c.arc(lx+12*s,ly-80,9,0,Math.PI*2);
+                c.fillStyle='rgba(255,240,150,0.9)'; c.fill();
+            }
+        }
+    }
+    for(const n of city.nodes){
+        if(!inView(n.x,n.y,200,view)) continue;
+        if(seededRand(n.id*3.7)>0.35) continue;
+        const ang=seededRand(n.id*1.9)*Math.PI*2;
+        const bx=n.x+Math.cos(ang)*130, by=n.y+Math.sin(ang)*130;
+        c.fillStyle='rgba(50,80,120,0.7)'; c.fillRect(bx-28,by-50,56,50);
+        c.fillStyle='rgba(100,180,255,0.35)'; c.fillRect(bx-24,by-46,48,42);
+        c.fillStyle='rgba(30,50,90,0.85)'; c.fillRect(bx-32,by-56,64,10);
+    }
+}
+
+// ── MINIMAP ───────────────────────────────────────────────────
+function drawMinimap(view){
+    mctx.clearRect(0,0,180,140);
+    if(!city||!city.edges) return;
+    const ws=state.world.size, scale=140/ws, ox=20, oy=10;
+    mctx.fillStyle='#151e10'; mctx.fillRect(0,0,180,140);
+    if(city.blocks){
+        for(const bl of city.blocks){
+            if(bl.vertices.length<3) continue;
+            mctx.save();
+            mctx.translate(ox+ws/2*scale, oy+ws/2*scale);
+            mctx.beginPath();
+            mctx.moveTo(bl.vertices[0].v.x*scale, bl.vertices[0].v.y*scale);
+            for(let i=0;i<bl.vertices.length;i++){
+                const ni=(i+1)%bl.vertices.length;
+                mctx.quadraticCurveTo(bl.vertices[i].cp.x*scale, bl.vertices[i].cp.y*scale,
+                                      bl.vertices[ni].v.x*scale, bl.vertices[ni].v.y*scale);
+            }
+            mctx.closePath();
+            if(bl.type==='lake') mctx.fillStyle='rgba(30,110,170,0.6)';
+            else if(bl.type==='park'||bl.type==='plaza') mctx.fillStyle='rgba(40,100,40,0.5)';
+            else mctx.fillStyle='rgba(70,60,50,0.35)';
+            mctx.fill();
+            mctx.restore();
+        }
+    }
+    mctx.save(); mctx.translate(ox+ws/2*scale, oy+ws/2*scale);
+    // Secondary roads
+    mctx.strokeStyle='rgba(55,65,80,0.85)'; mctx.lineWidth=1.5; mctx.lineCap='round';
+    mctx.beginPath();
+    for(const e of city.edges.filter(e=>e.isSecondary)){
+        mctx.moveTo(e.n1.x*scale,e.n1.y*scale);
+        mctx.quadraticCurveTo(e.cp.x*scale,e.cp.y*scale,e.n2.x*scale,e.n2.y*scale);
+    }
+    mctx.stroke();
+    // Primary roads
+    mctx.strokeStyle='rgba(80,90,105,0.95)'; mctx.lineWidth=2.5;
+    mctx.beginPath();
+    for(const e of city.edges.filter(e=>!e.isSecondary)){
+        mctx.moveTo(e.n1.x*scale,e.n1.y*scale);
+        mctx.quadraticCurveTo(e.cp.x*scale,e.cp.y*scale,e.n2.x*scale,e.n2.y*scale);
+    }
+    mctx.stroke();
+    if(trackerManager&&trackerManager.path.length>0){
+        mctx.strokeStyle='#00dc64'; mctx.lineWidth=2.2;
+        mctx.beginPath(); let first=true;
+        for(const step of trackerManager.path){
+            const e=step.edge;
+            if(first){const s=step.direction===1?e.n1:e.n2;mctx.moveTo(s.x*scale,s.y*scale);first=false;}
+            const en=step.direction===1?e.n2:e.n1;
+            mctx.quadraticCurveTo(e.cp.x*scale,e.cp.y*scale,en.x*scale,en.y*scale);
+        }
+        mctx.stroke();
+    }
+    if(trackerManager){
+        if(trackerManager.startNode){
+            mctx.beginPath();mctx.arc(trackerManager.startNode.x*scale,trackerManager.startNode.y*scale,4,0,Math.PI*2);
+            mctx.fillStyle='#ff2244';mctx.fill();
+        }
+        if(trackerManager.goalNode){
+            mctx.beginPath();mctx.arc(trackerManager.goalNode.x*scale,trackerManager.goalNode.y*scale,4,0,Math.PI*2);
+            mctx.fillStyle='#00dc64';mctx.fill();
+        }
+        if(trackerManager.tracker){
+            mctx.beginPath();mctx.arc(trackerManager.tracker.x*scale,trackerManager.tracker.y*scale,3,0,Math.PI*2);
+            mctx.fillStyle='#00aaff';mctx.fill();
+        }
+    }
+    mctx.strokeStyle='rgba(0,243,255,0.5)'; mctx.lineWidth=1;
+    mctx.strokeRect(view.left*scale,view.top*scale,(view.right-view.left)*scale,(view.bottom-view.top)*scale);
+    mctx.restore();
+}
+
+// ── RENDER CORE ───────────────────────────────────────────────
+function renderCore(dt){
+    updatePhysics();
+    state.time += dt;
+
+    state.fpsFrames++; state.fpsTimer+=dt;
+    if(state.fpsTimer>=0.5){
+        state.fps=Math.round(state.fpsFrames/state.fpsTimer);
+        state.fpsFrames=0; state.fpsTimer=0;
+        document.getElementById('stat-fps').textContent=state.fps;
+    }
+
+    const w=window.innerWidth, h=window.innerHeight;
+    const dpr=window.devicePixelRatio||1;
+    const view=getView();
+
+    ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr,dpr);
+    ctx.save();
+    ctx.scale(state.camera.zoom, state.camera.zoom);
+    ctx.translate(state.camera.x, state.camera.y);
+
+    const detail=state.camera.zoom>0.14;
+
+    drawBackground(ctx,view);
+
+    if(city){
+        drawBlocks(ctx,view,detail);
+        drawScatteredTrees(ctx,view,detail);
+        drawRoads(ctx,view,detail);
+        drawIntersections(ctx,view,detail);
+        drawStreetFurniture(ctx,view,detail);
+        const paused = trackerManager && trackerManager.isPaused;
+        if(trackerManager){ trackerManager.update(dt); trackerManager.draw(ctx,view,state.camera.zoom); }
+        if(trafficManager){ trafficManager.update(paused ? 0 : dt); trafficManager.draw(ctx,view,state.camera.zoom); }
+    }
+
+    ctx.restore();
+
+    // Vignette
+    const vig=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.75);
+    vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.45)');
+    ctx.fillStyle=vig; ctx.fillRect(0,0,w,h);
+
+    // Transition
+    if(state.transition.active){
+        if(state.transition.phase==='out'){
+            state.transition.alpha=Math.min(1,state.transition.alpha+dt*3);
+            if(state.transition.alpha>=1){ initCity(); state.transition.phase='in'; }
+        } else {
+            state.transition.alpha=Math.max(0,state.transition.alpha-dt*3);
+            if(state.transition.alpha<=0) state.transition.active=false;
+        }
+        ctx.fillStyle=`rgba(8,18,8,${state.transition.alpha})`; ctx.fillRect(0,0,w,h);
+    }
+
+    if(city) drawMinimap(view);
+}
+
+// ── ANIMATE ───────────────────────────────────────────────────
+let lastTime=0;
+function animate(t){
+    if(!lastTime) lastTime=t;
+    let dt=Math.min((t-lastTime)/1000,0.08);
+    lastTime=t;
+    renderCore(dt);
+    requestAnimationFrame(animate);
+}
+
+// ── BOOT ──────────────────────────────────────────────────────
+resizeCanvas();
+initCity();
+animate();
+
