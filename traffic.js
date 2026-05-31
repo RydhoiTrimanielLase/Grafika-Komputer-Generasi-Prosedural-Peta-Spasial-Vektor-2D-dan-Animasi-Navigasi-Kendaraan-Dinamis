@@ -140,4 +140,3 @@ class TrafficVehicle {
         ctx.restore();
     }
 }
-
