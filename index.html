@@ -1,1 +1,171 @@
+<!-- ============================================================
+     index.html — Struktur UI & Canvas Utama
+     Mata Kuliah : INF11114 Grafika Komputer — UMRAH
+     Semester    : Genap 2025/2026
+     Dosen       : Tekad Matulatan & Nolan Efranda
+     ============================================================
+     Kontributor : Ikhbal Maulana (2401020039)
+     Peran       : Rendering & UI
+     Modul       : /renderer  /ui
+     ============================================================
+
+     DESKRIPSI:
+     File ini mendefinisikan struktur HTML antarmuka pengguna
+     aplikasi Smart City Vector Map, meliputi elemen canvas
+     utama untuk rendering peta, panel kontrol interaktif,
+     minimap, dan legenda — sesuai fitur wajib RPM INF11114.
+
+     KOMPONEN:
+     - <canvas id="mapCanvas">   : media rendering peta utama
+     - <canvas id="minimapCanvas">: peta overview real-time
+     - Panel kiri                : semua tombol kontrol
+     - Legenda                   : keterangan simbol peta
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Vector Map</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="mapCanvas"></canvas>
+
+    <!-- UI Panel Kiri -->
+    <div class="ui-panel">
+        <div class="panel-header">
+            <span class="panel-title">Smart City Vector Map</span>
+            <span class="badge">v3.0</span>
+        </div>
+
+        <div class="button-group">
+            <button id="btn-random-map" class="btn">
+                🗺️ Acak Map
+            </button>
+            <button id="btn-random-pos" class="btn">
+                📍 Acak Posisi
+            </button>
+            <button id="btn-start-track" class="btn primary">
+                ▶ Start
+            </button>
+            <button id="btn-pause" class="btn warning">
+                ⏸ Pause
+            </button>
+            <div class="zoom-row">
+                <button id="btn-zoom-in" class="btn zoom-btn" title="Zoom In">＋</button>
+                <button id="btn-zoom-out" class="btn zoom-btn" title="Zoom Out">－</button>
+                <button id="btn-reset-cam" class="btn zoom-btn-reset btn-reset" title="Reset Kamera">⊙</button>
+            </div>
+        </div>
+
+        <!-- VEHICLE SELECTOR -->
+        <div class="section-label">Jenis Kendaraan</div>
+        <div class="vehicle-selector">
+            <button class="veh-btn active" data-type="car"     title="Mobil">🚗</button>
+            <button class="veh-btn"        data-type="truck"   title="Truk">🚛</button>
+            <button class="veh-btn"        data-type="bus"     title="Bus">🚌</button>
+            <button class="veh-btn"        data-type="motor"   title="Motor">🏍️</button>
+            <button class="veh-btn"        data-type="bicycle" title="Sepeda">🚲</button>
+            <button class="veh-btn"        data-type="person"  title="Orang">🚶</button>
+        </div>
+
+        <!-- VEHICLE SCALE -->
+        <div class="speed-row">
+            <span class="speed-label">Ukuran</span>
+            <div class="speed-slider-wrap">
+                <input type="range" id="scaleSlider" min="0.4" max="3.0" step="0.1" value="1.0">
+            </div>
+            <span class="speed-val" id="scaleVal">1.0x</span>
+        </div>
+
+        <!-- TRAIL TOGGLE -->
+        <div class="toggle-row">
+            <label class="toggle-label">
+                <input type="checkbox" id="trailToggle" checked>
+                <span class="toggle-switch"></span>
+                Jejak Perjalanan
+            </label>
+        </div>
+
+        <div class="speed-row">
+            <span class="speed-label">Kecepatan</span>
+            <div class="speed-slider-wrap">
+                <input type="range" id="speedSlider" min="0.3" max="5" step="0.1" value="1.6">
+            </div>
+            <span class="speed-val" id="speedVal">1.6x</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="stats-grid">
+            <div class="stat-row">
+                <span class="stat-icon">↔</span>
+                <span class="stat-label">Route Length</span>
+                <span class="stat-value green" id="stat-length">—</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">⬡</span>
+                <span class="stat-label">Node Count</span>
+                <span class="stat-value white" id="stat-nodes">—</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">⏱</span>
+                <span class="stat-label">Estimasi Waktu</span>
+                <span class="stat-value orange" id="stat-time">—</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">🚗</span>
+                <span class="stat-label">Kendaraan</span>
+                <span class="stat-value white" id="stat-vtype">Mobil</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-icon">⚡</span>
+                <span class="stat-label">FPS</span>
+                <span class="stat-value white" id="stat-fps">60</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimap -->
+    <div class="minimap-container">
+        <div class="minimap-title">MINI MAP</div>
+        <canvas id="minimapCanvas"></canvas>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend-panel">
+        <div class="legend-item">
+            <div class="leg-line" style="background:#555a66;height:4px;border-top:1px dashed #888"></div>
+            Jalan Utama
+        </div>
+        <div class="legend-item">
+            <div class="leg-line" style="background:#3a3f4a"></div>
+            Jalan Kecil
+        </div>
+        <div class="legend-item">
+            <div class="leg-line" style="background:#00dc64;box-shadow:0 0 6px #00dc6488"></div>
+            Rute Terpendek
+        </div>
+        <div class="legend-item">
+            <div class="leg-dot" style="background:#ff2244;box-shadow:0 0 6px #ff224488"></div>
+            Titik Awal
+        </div>
+        <div class="legend-item">
+            <div class="leg-dot" style="background:#00dc64;box-shadow:0 0 6px #00dc6488"></div>
+            Titik Tujuan
+        </div>
+        <div class="legend-item">
+            <div class="leg-line" style="background:transparent;border-top:2px dashed rgba(0,220,100,0.6)"></div>
+            Jejak Perjalanan
+        </div>
+    </div>
+
+    <script src="generator.js"></script>
+    <script src="tracker.js"></script>
+    <script src="traffic.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
 
