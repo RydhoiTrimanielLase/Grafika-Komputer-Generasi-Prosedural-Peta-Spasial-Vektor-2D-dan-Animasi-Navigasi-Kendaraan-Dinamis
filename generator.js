@@ -297,4 +297,3 @@ class CityGenerator {
         this.blocks = valid;
     }
 }
-
