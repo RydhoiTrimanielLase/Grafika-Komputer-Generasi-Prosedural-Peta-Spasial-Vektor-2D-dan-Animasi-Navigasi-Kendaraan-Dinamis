@@ -1,1 +1,332 @@
+/* ============================================================
+   style.css — UI Layout & Visual Styling
+   Mata Kuliah : INF11114 Grafika Komputer — UMRAH
+   Semester    : Genap 2025/2026
+   Dosen       : Tekad Matulatan & Nolan Efranda
+   ============================================================
+   Kontributor : Ikhbal Maulana (2401020039)
+   Peran       : Rendering & UI
+   Modul       : /renderer  /ui
+   ============================================================
+
+   DESKRIPSI:
+   File ini mendefinisikan seluruh visual styling antarmuka
+   pengguna aplikasi Smart City Vector Map, meliputi layout
+   panel kontrol, tombol interaktif, slider, toggle switch,
+   minimap container, dan legenda peta.
+
+   KOMPONEN UI (sesuai fitur wajib RPM INF11114):
+   - Panel kontrol kiri: tombol Acak Map, Acak Posisi,
+     Start, Pause, Reset Kamera, Zoom In/Out
+   - Slider kecepatan dan ukuran kendaraan
+   - Toggle jejak perjalanan
+   - Minimap container (peta overview real-time)
+   - Panel legenda dan statistik rute
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: #0d1b2a;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    color: #e0f2fe;
+}
+
+#mapCanvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 1;
+    cursor: grab;
+}
+#mapCanvas:active { cursor: grabbing; }
+
+/* ── PANEL KIRI ── */
+.ui-panel {
+    position: absolute;
+    top: 20px; left: 20px;
+    z-index: 10;
+    width: 280px;
+    background: rgba(8, 14, 28, 0.88);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(0,243,255,0.18);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,243,255,0.06);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(0,243,255,0.5);
+}
+.badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    border: 1px solid rgba(0,243,255,0.4);
+    color: #00f3ff;
+    background: rgba(0,243,255,0.08);
+}
+
+/* Buttons 2×2 grid */
+.button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: #c8d8f0;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+}
+.btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); transform: translateY(-1px); }
+.btn:active { transform: scale(0.96); }
+
+.btn.primary {
+    background: rgba(0,180,80,0.18);
+    border-color: rgba(0,220,100,0.5);
+    color: #00dc64;
+    font-weight: 600;
+}
+.btn.primary:hover { background: rgba(0,180,80,0.32); box-shadow: 0 0 16px rgba(0,220,100,0.3); }
+
+.btn.warning {
+    background: rgba(0,120,255,0.12);
+    border-color: rgba(0,160,255,0.4);
+    color: #60b8ff;
+}
+.btn.warning:hover { background: rgba(0,120,255,0.24); }
+
+.btn.btn-full { grid-column: 1 / -1; }
+.btn.btn-reset {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.12);
+    color: #8899bb;
+}
+
+/* Speed slider */
+.speed-row {
+    display: flex; align-items: center; justify-content: space-between;
+}
+.speed-label { font-size: 11px; color: #8899bb; font-weight: 500; }
+.speed-val { font-size: 11px; color: #00f3ff; font-weight: 600; min-width: 32px; text-align: right; }
+.speed-slider-wrap { flex: 1; margin: 0 10px; }
+#speedSlider {
+    -webkit-appearance: none;
+    width: 100%; height: 4px;
+    background: rgba(0,243,255,0.15);
+    border-radius: 2px;
+    cursor: pointer; outline: none;
+}
+#speedSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #00f3ff;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0,243,255,0.6);
+}
+
+/* Stats */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,243,255,0.12), transparent); }
+
+.stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.18);
+    border-radius: 8px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+.stat-icon { font-size: 14px; margin-right: 6px; }
+.stat-label { font-size: 11px; color: #8899bb; flex: 1; }
+.stat-value { font-size: 11px; font-weight: 600; color: #00f3ff; }
+.stat-value.green { color: #00dc64; }
+.stat-value.orange { color: #ffaa00; }
+.stat-value.white { color: #ffffff; }
+
+/* Minimap */
+.minimap-container {
+    position: absolute;
+    bottom: 20px; left: 20px;
+    z-index: 10;
+    width: 180px; height: 140px;
+    background: rgba(8,14,28,0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,243,255,0.18);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.minimap-title {
+    position: absolute;
+    top: 6px; left: 10px;
+    font-size: 8px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: rgba(0,243,255,0.5);
+    pointer-events: none;
+    z-index: 2;
+}
+#minimapCanvas { width: 100%; height: 100%; display: block; }
+
+/* Legend (bottom right) */
+.legend-panel {
+    position: absolute;
+    bottom: 20px; right: 20px;
+    z-index: 10;
+    background: rgba(8,14,28,0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,243,255,0.18);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 160px;
+}
+.legend-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; color: #8899bb;
+}
+.leg-line { width: 22px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+.leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── VEHICLE SELECTOR ─────────────────────────────── */
+.section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(180,190,210,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 10px 0 6px;
+    padding: 0 2px;
+}
+
+.vehicle-selector {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.veh-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 6px 4px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    color: white;
+}
+.veh-btn:hover {
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(0,220,100,0.5);
+    transform: translateY(-1px);
+}
+.veh-btn.active {
+    background: rgba(0,140,60,0.35);
+    border-color: #00dc64;
+    box-shadow: 0 0 10px rgba(0,220,100,0.3);
+}
+
+/* ── TOGGLE ROW ──────────────────────────────────── */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    margin: 4px 0 8px;
+}
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(200,210,230,0.85);
+    cursor: pointer;
+    user-select: none;
+}
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+.toggle-switch {
+    width: 34px;
+    height: 18px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 9px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.toggle-switch::after {
+    content: '';
+    width: 12px; height: 12px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    position: absolute;
+    top: 3px; left: 3px;
+    transition: left 0.2s, background 0.2s;
+}
+.toggle-label input:checked + .toggle-switch {
+    background: #00a84b;
+}
+.toggle-label input:checked + .toggle-switch::after {
+    left: 19px;
+    background: #fff;
+}
+
+/* ── ZOOM BUTTONS ── */
+.zoom-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+}
+.zoom-btn {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 8px 0;
+    letter-spacing: 0;
+    line-height: 1;
+}
+.zoom-btn-reset {
+    flex: 1.2;
+    font-size: 14px;
+}
 
